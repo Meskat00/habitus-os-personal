@@ -7531,8 +7531,10 @@ const Cloud={
           if(seen.has(id)||this.meta[key].deleted)continue;
           if(!this.meta[key].hash)continue; // never synced: ignore
           const t=(S.trash||[]).find(x=>x&&x.kind===kind&&x.item&&x.item.id===id);
+          // Always soft-delete (tombstone) so the deletion propagates to other devices.
+          // Hard deletes leave no trace, so other devices would keep (and re-upload) the doc.
           if(t)ops.push({kind,id,doc:null,softDelete:true});
-          else ops.push({kind,id,doc:null,hardDelete:true});
+          else ops.push({kind,id,doc:null,softDelete:true});
         }
       }
       // settings doc
