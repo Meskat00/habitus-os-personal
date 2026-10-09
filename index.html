@@ -58,28 +58,30 @@
 "use strict";
 /* ============================================================
    FIREBASE / CLOUD CONFIG — owner setup (one time).
-   1. Create a Firebase project (Spark plan, NO billing) named "Habitus OS Personal".
-   2. Enable Authentication: Google + Email/Password. Create your owner user.
-   3. Create a Cloud Firestore database. Deploy firestore.rules from this repo,
-      with REPLACE_WITH_OWNER_UID substituted by your Auth UID
-      (Firebase Console → Authentication → Users → UID).
-   4. Firebase Console → Project settings → Your apps → Web app: copy the
-      config values below. The apiKey etc. are public client identifiers
-      (Firebase docs); access is enforced by Security Rules, not by secrecy.
-   5. Push to main — GitHub Actions deploys. Until configured, the app runs
-      fully local-only (browser storage, no sync) and says so in Settings.
+   Firebase project "habitus-os-personal" (Spark plan, NO billing) is configured.
+   Auth: Google + Email/Password enabled. Firestore: production mode, asia-southeast1.
+   The apiKey etc. are public client identifiers (Firebase docs); access is
+   enforced by Firebase Auth + Security Rules, not by secrecy.
+   OWNER UID: read at boot from owner.json (repo root) so it can be granted
+   without re-uploading this file. If empty/unset, sign-in shows the UID to
+   send to Muse. firestore.rules in this repo must carry the same UID.
+   Until cloud is configured, the app runs fully local-only (browser storage,
+   no sync) and says so in Settings.
    NEVER paste: service-account JSON, Admin SDK keys, or private keys here.
 ============================================================ */
 window.FIREBASE_CONFIG={
-  apiKey:"REPLACE_WITH_FIREBASE_API_KEY",
-  authDomain:"REPLACE_WITH_PROJECT_ID.firebaseapp.com",
-  projectId:"REPLACE_WITH_PROJECT_ID",
-  appId:"REPLACE_WITH_APP_ID"
+  apiKey:"AIzaSyDLDMDUjrxKPdv-KKATa7yGGjFy0Tvn7FQ",
+  authDomain:"habitus-os-personal.firebaseapp.com",
+  projectId:"habitus-os-personal",
+  storageBucket:"habitus-os-personal.firebasestorage.app",
+  messagingSenderId:"350990022704",
+  appId:"1:350990022704:web:6bd79d4d31410e21b415f5"
 };
-window.OWNER_UID="REPLACE_WITH_OWNER_UID";
+/* Inline override (optional). When empty, the UID is fetched from owner.json. */
+window.OWNER_UID="";
 window.FIREBASE_SDK_VERSION="10.12.2";
-window.CLOUD_ENABLED=window.FIREBASE_CONFIG.apiKey!=="REPLACE_WITH_FIREBASE_API_KEY"
-  &&window.OWNER_UID!=="REPLACE_WITH_OWNER_UID";
+window.CLOUD_ENABLED=!!(window.FIREBASE_CONFIG.apiKey
+  &&window.FIREBASE_CONFIG.apiKey!=="REPLACE_WITH_FIREBASE_API_KEY");
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -2733,6 +2735,7 @@ const Onboarding={
   data:null,
   steps(){return 7;},
   start(){
+    this.close(); /* never stack overlays: duplicate IDs left the visible Continue inert */
     this.data={step:0,identity:S.identity||"I am a disciplined researcher",
       roles:new Set(S.roles),areas:new Set(S.focusAreas),
       deep:S.deepWorkTarget,study:S.studyTarget,water:S.waterTarget,period:S.preferredStudy||"Evening"};
@@ -2765,7 +2768,7 @@ const Onboarding={
     if(back&&d.step>0)back.onclick=()=>{sync();this.close();d.step--;this.render();};
     next.onclick=()=>{sync();if(d.step<this.steps()-1){this.close();d.step++;this.render();}else this.finish();};
   },
-  close(){const b=$("#obBack");if(b)b.remove();},
+  close(){document.querySelectorAll(".ob-back").forEach(b=>b.remove());},
   finish(){
     const d=this.data;
     commit("onboarding",()=>{S.identity=(d.identity||"").trim()||S.identity;S.roles=[...d.roles];S.focusAreas=[...d.areas];S.deepWorkTarget=d.deep;S.studyTarget=d.study;S.waterTarget=d.water;S.preferredStudy=d.period;S.onboarded=true;});
@@ -3861,6 +3864,10 @@ async function dbWhyModal(){
 }
 /* ---------- boot ---------- */
 async function boot(){
+  /* Single-flight: boot is invoked from several startup paths (classic gate,
+     ESM auth module, local fallback, re-sign-in). A second run would
+     double-schedule intervals/timers and stack overlays. */
+  if(window.__habitusBooted)return; window.__habitusBooted=true;
   const v=$("#view");
   v.innerHTML=`<div class="card" style="max-width:420px;margin:9vh auto;text-align:center"><div class="brand-mark font-display" style="margin:0 auto .9rem">H</div><h3 class="font-display">Opening Habitus OS…</h3><p class="sub">Loading your local workspace.</p></div>`;
   const ok=await DB.open();
@@ -7903,7 +7910,18 @@ import {
 
 const VER = window.FIREBASE_SDK_VERSION || "10.12.2";
 const cfg = window.FIREBASE_CONFIG || {};
-const OWNER_UID = window.OWNER_UID || "";
+let OWNER_UID = window.OWNER_UID || "";
+/* Owner UID lives in owner.json (repo root) so access can be granted without
+   re-uploading this file. Fetched fresh (no-store) at boot; inline
+   window.OWNER_UID above still wins when set. */
+async function resolveOwnerUid(){
+  if(OWNER_UID) return OWNER_UID;
+  try{
+    const r=await fetch("owner.json",{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); if(j&&j.uid) OWNER_UID=String(j.uid); }
+  }catch(e){}
+  return OWNER_UID;
+}
 const appShell = () => document.getElementById("appShell");
 const authShell = () => document.getElementById("authShell");
 
@@ -8005,7 +8023,15 @@ async function initDb(app, trusted){
 }
 
 async function main(){
-  if(!window.CLOUD_ENABLED){ started(); showApp(); window.HabitusBoot(); return; }
+  if(!window.CLOUD_ENABLED){
+    /* Local-only build: the classic Layer-21 startup gate already booted
+       (module scripts are deferred and run after it). Never boot twice —
+       a second boot stacked two onboarding overlays with duplicate IDs,
+       leaving the visible Continue button without a handler. */
+    if(!window.__habitusStarted){ started(); showApp(); window.HabitusBoot(); }
+    return;
+  }
+  await resolveOwnerUid();
   let app, auth;
   try{
     app=initializeApp(cfg); auth=getAuth(app);
@@ -8030,10 +8056,25 @@ async function main(){
 
   onAuthStateChanged(auth, async(user)=>{
     if(!user){ started(); showAuth(true); return; }
-    if(user.uid!==OWNER_UID){
+    if(!OWNER_UID||user.uid!==OWNER_UID){
+      const signedInUid=user.uid, signedInEmail=user.email||"";
       try{ await fbSignOut(auth); }catch(e){}
       started(); showAuth(true);
-      authError("Access denied. This is a private single-owner workspace.", false);
+      authError(OWNER_UID
+        ? "Access denied. This is a private single-owner workspace."
+        : "Owner access is not set up yet.", false);
+      /* Show the signed-in person their own UID so they can send it to Muse
+         to grant access. Displayed only to the person who just signed in. */
+      try{
+        const e=document.getElementById("authErr");
+        if(e){
+          const d=document.createElement("div");
+          d.style.cssText="margin-top:10px;font-size:12px;line-height:1.6;opacity:.9;word-break:break-all;";
+          d.textContent=(signedInEmail?("Signed in as "+signedInEmail+". "):"")
+            +"Your UID: "+signedInUid+" — send this UID to Muse to grant owner access.";
+          e.appendChild(d);
+        }
+      }catch(_){}
       try{ window.Cloud&&window.Cloud.setStatus("local"); }catch(e){}
       return;
     }
