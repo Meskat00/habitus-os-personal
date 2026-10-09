@@ -421,6 +421,15 @@ body.density-compact h2.font-display{font-size:1.45rem}
 .auth-note{display:flex;align-items:center;justify-content:center;gap:.45rem;color:var(--faint);
   font-size:.74rem;margin:1.6rem 0 0;line-height:1.5}
 .auth-note svg{flex-shrink:0;opacity:.7}
+/* ---------- rotating physicist quote (Today) ---------- */
+.quote-card{text-align:center;padding:1.05rem 1.5rem;margin-bottom:1rem;position:relative;overflow:hidden}
+.quote-card::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);opacity:.6}
+.pq-mark{font-family:Georgia,"Times New Roman",serif;font-size:2.4rem;line-height:.8;color:var(--accent);opacity:.55}
+.pq-text{font-size:1.02rem;font-style:italic;line-height:1.55;margin:.25rem auto .55rem;max-width:34rem;color:var(--text)}
+.pq-by{font-size:.78rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.pq-fade{animation:pqFade .6s ease}
+@keyframes pqFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* ---------- cloud ---------- */
 .sync-pill{white-space:nowrap}
 #peerBanner{position:fixed;top:0;left:0;right:0;z-index:180;display:flex;gap:.8rem;align-items:center;
@@ -1423,12 +1432,63 @@ function alignmentSparkHTML(){
   return `<svg viewBox="0 0 100 100" style="width:100%;height:56px" role="img" aria-label="Alignment trend, last 7 days"><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg>
   <div class="sub" style="display:flex;justify-content:space-between"><span>7 days ago</span><span>today</span></div>`;
 }
+/* ---------- rotating physicist quote (Today page header) ----------
+   One quote per minute, deterministic by clock so every device shows the same one. */
+const PHYS_QUOTES=[
+ ["Imagination is more important than knowledge.","Albert Einstein"],
+ ["Life is like riding a bicycle. To keep your balance, you must keep moving.","Albert Einstein"],
+ ["It's not that I'm so smart, it's just that I stay with problems longer.","Albert Einstein"],
+ ["A person who never made a mistake never tried anything new.","Albert Einstein"],
+ ["The important thing is not to stop questioning.","Albert Einstein"],
+ ["We cannot solve our problems with the same thinking we used when we created them.","Albert Einstein"],
+ ["Look deep into nature, and then you will understand everything better.","Albert Einstein"],
+ ["What I cannot create, I do not understand.","Richard Feynman"],
+ ["The first principle is that you must not fool yourself — and you are the easiest person to fool.","Richard Feynman"],
+ ["Study hard what interests you the most in the most undisciplined, irreverent and original manner possible.","Richard Feynman"],
+ ["I think it's much more interesting to live not knowing than to have answers which might be wrong.","Richard Feynman"],
+ ["The 'paradox' is only a conflict between reality and your feeling of what reality 'ought to be'.","Richard Feynman"],
+ ["Nothing in life is to be feared, it is only to be understood.","Marie Curie"],
+ ["Be less curious about people and more curious about ideas.","Marie Curie"],
+ ["I was taught that the way of progress was neither swift nor easy.","Marie Curie"],
+ ["An expert is a person who has made all the mistakes that can be made in a very narrow field.","Niels Bohr"],
+ ["Every great and deep difficulty bears in itself its own solution.","Niels Bohr"],
+ ["If I have seen further it is by standing on the shoulders of Giants.","Isaac Newton"],
+ ["No great discovery was ever made without a bold guess.","Isaac Newton"],
+ ["All truths are easy to understand once they are discovered; the point is to discover them.","Galileo Galilei"],
+ ["You cannot teach a man anything; you can only help him discover it in himself.","Galileo Galilei"],
+ ["Nothing is too wonderful to be true, if it be consistent with the laws of nature.","Michael Faraday"],
+ ["Intelligence is the ability to adapt to change.","Stephen Hawking"],
+ ["However difficult life may seem, there is always something you can do and succeed at.","Stephen Hawking"],
+ ["The present is theirs; the future, for which I really worked, is mine.","Nikola Tesla"],
+ ["A physical law must possess mathematical beauty.","Paul Dirac"],
+ ["If a man never contradicts himself, the reason must be that he virtually never says anything at all.","Erwin Schrödinger"],
+];
+function physQuoteIdx(){return Math.floor(Date.now()/60000)%PHYS_QUOTES.length;}
+function physQuoteHTML(){
+  const i=physQuoteIdx(),Q=PHYS_QUOTES[i];
+  return `<div class="card quote-card" id="physQuote" data-qidx="${i}">
+    <div class="pq-mark" aria-hidden="true">&ldquo;</div>
+    <p class="pq-text">${esc(Q[0])}</p>
+    <div class="pq-by">&mdash; ${esc(Q[1])}</div></div>`;
+}
+/* Called every few seconds from boot; swaps the quote when the minute rolls over. */
+function tickPhysQuote(){
+  const el=document.getElementById("physQuote");if(!el)return;
+  const i=physQuoteIdx();
+  if(String(i)===el.dataset.qidx)return;
+  el.dataset.qidx=String(i);
+  const Q=PHYS_QUOTES[i],tx=el.querySelector(".pq-text"),by=el.querySelector(".pq-by");
+  if(tx)tx.textContent=Q[0];
+  if(by)by.textContent="\u2014 "+Q[1];
+  el.classList.remove("pq-fade");void el.offsetWidth;el.classList.add("pq-fade");
+}
 function viewToday(){
   const t=dayKey(),na=nextActionInfo(),mw=mustWinTask();
   const al=alignmentScore(new Date());
   setHTML("#view",`
   ${viewHead(`${greeting()} <span class="grad">· Today</span>`,`${fmtDT(t)}${S.identity?` · ${esc(S.identity)}`:""}`,
     `<button class="btn btn-primary" data-action="quick-focus">◉ Start focus</button><button class="btn" data-action="add-task">＋ New task</button>`)}
+  ${physQuoteHTML()}
   <div class="grid g2" style="margin-bottom:1rem">
     <div class="card hero-card"><div class="sub" style="margin-bottom:.3rem">🎯 Must-win outcome</div>
       ${mw?`<h2 class="font-display" style="font-size:1.35rem;line-height:1.35;margin-bottom:.5rem">${esc(mw.title)}</h2>
@@ -3949,6 +4009,7 @@ async function boot(){
     try{await Cloud.afterLocalBoot();}catch(e){Diag.log("cloud","afterLocalBoot",e.message);}
   }
   render();tick();setInterval(tick,15000);
+  tickPhysQuote();setInterval(tickPhysQuote,5000);
   refreshHealth().then(()=>{fillDataCards();});
   if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().then(p=>{Health.persisted=p;}).catch(()=>{});}
   if(!S.onboarded)setTimeout(()=>Onboarding.start(),450);
