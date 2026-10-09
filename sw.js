@@ -1,7 +1,7 @@
 /* Habitus OS service worker — app-shell caching only.
    Never caches: Firebase Auth, Firestore, personal records, tokens, backups. */
 "use strict";
-const CACHE_VERSION = "habitus-os-v5-1-release-3"; /* bumped: owner.json never cached */
+const CACHE_VERSION = "habitus-os-v5-1-release-4"; /* bumped: force update detection for seed-data removal + reset fix */
 /* Config files that must never be served stale from cache. */
 const NEVER_CACHE_PATHS = ["owner.json"];
 function neverCache(url){
