@@ -1,7 +1,15 @@
 /* Habitus OS service worker — app-shell caching only.
    Never caches: Firebase Auth, Firestore, personal records, tokens, backups. */
 "use strict";
-const CACHE_VERSION = "habitus-os-v5-1-release-2"; /* bumped: Firebase config wired */
+const CACHE_VERSION = "habitus-os-v5-1-release-3"; /* bumped: owner.json never cached */
+/* Config files that must never be served stale from cache. */
+const NEVER_CACHE_PATHS = ["owner.json"];
+function neverCache(url){
+  try{
+    const u = new URL(url, self.location.origin);
+    return NEVER_CACHE_PATHS.some(n => u.pathname === "/" + n || u.pathname.endsWith("/" + n));
+  }catch(e){ return false; }
+}
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -53,6 +61,7 @@ self.addEventListener("fetch", (event) => {
   if(req.method !== "GET") return;
   const url = req.url;
   if(bypass(url)) return; /* network-only: auth, Firestore, SDK */
+  if(neverCache(url)) return; /* config: always fresh from network */
   /* Navigation: cache-first with offline fallback. */
   if(req.mode === "navigate"){
     event.respondWith(
