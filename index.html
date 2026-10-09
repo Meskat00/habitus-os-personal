@@ -7884,6 +7884,9 @@ const Cloud={
     });
   }
 };
+/* Expose to window: the ESM auth/cloud bootstrap (deferred module) drives
+   setup through window.Cloud. Top-level const does not land on window. */
+window.Cloud=Cloud;
 
 </script>
 
