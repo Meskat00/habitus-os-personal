@@ -1,0 +1,15 @@
+.env
+.env.*
+*.backup.json
+*.private.json
+*.export.json
+backups/
+exports/
+private/
+firebase-debug.log
+firestore-debug.log
+.firebaserc
+.DS_Store
+Thumbs.db
+serviceAccount*.json
+*service-account*.json
