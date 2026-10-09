@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Habitus OS Personal — deny-by-default, owner-only.
+// The OWNER_UID below is substituted with the approved Firebase Authentication
+// UID during authorized deployment. Until then, no client can read or write.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Owner's personal workspace. Every check must pass:
+    //  - caller is authenticated
+    //  - caller UID matches the UID in the document path
+    //  - caller UID is the approved owner UID
+    match /users/{userId}/{document=**} {
+      allow read, create, update, delete:
+        if request.auth != null
+        && request.auth.uid == userId
+        && request.auth.uid == "REPLACE_WITH_OWNER_UID";
+    }
+
+    // Everything else: deny.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
