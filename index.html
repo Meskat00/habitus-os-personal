@@ -4822,11 +4822,14 @@ html.focusing .orb{animation-play-state:paused} /* pause decorative ambient duri
 /* responsive */
 @media (max-width:560px){
   .flip-clock{--digit-size:clamp(2.6rem,13vw,4.5rem)}
+  #fcFocusClock{--digit-size:clamp(2rem,10.5vw,3.2rem)}
+  #fcFocusClock .fc-digits{max-width:100%}
   .fc-full .flip-clock{--digit-size:clamp(3rem,16vw,7rem)}
   .fc-sep i{width:.4rem;height:.4rem}
 }
 @media (max-width:380px){
   .flip-clock{--digit-size:clamp(2.2rem,12.5vw,3.4rem)}
+  #fcFocusClock{--digit-size:clamp(1.9rem,10vw,2.8rem)}
   .fc-sep{display:none}
 }
 @media (prefers-reduced-motion:reduce){
