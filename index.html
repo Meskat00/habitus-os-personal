@@ -298,6 +298,15 @@ canvas.chart{width:100%;height:170px;display:block}
   background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:99px;padding:.1rem .5rem;
   box-shadow:0 2px 8px rgba(0,0,0,.4);animation:nowPulse 2.6s ease-in-out infinite}
 @keyframes nowPulse{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 2px 16px rgba(139,92,246,.6)}}
+/* ---------- mobile timeline: single stacked track ---------- */
+@media(max-width:640px){
+  .tl-connect{display:none}
+  .tl-workhours{left:48px !important}
+  .tl-actual{padding:.2rem .55rem}
+  .tl-actual .tt{display:inline;font-size:.7rem}
+  .tl-actual .tm{display:inline;margin-left:.45rem}
+  .timeline{--tl-gutter:48px}
+}
 .tl-block{position:absolute;left:64px;right:10px;border-radius:10px;padding:.4rem .6rem;font-size:.8rem;cursor:grab;z-index:4;border:1px solid;overflow:hidden;user-select:none;touch-action:none;will-change:transform;
   box-shadow:0 4px 14px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.09);
   animation:tlIn .45s cubic-bezier(.2,.9,.3,1.12) backwards;animation-delay:var(--d,0ms)}
@@ -839,6 +848,13 @@ try{
   const __dmq=window.matchMedia&&window.matchMedia("(max-width:720px)");
   if(__dmq&&__dmq.addEventListener)__dmq.addEventListener("change",()=>{try{applyTheme();}catch(e){}});
 }catch(e){}
+/* Re-layout the planner timeline when crossing the mobile breakpoint (rotation/resize). */
+try{
+  const __tlmq=window.matchMedia&&window.matchMedia("(max-width:640px)");
+  if(__tlmq&&__tlmq.addEventListener)__tlmq.addEventListener("change",()=>{
+    try{if(typeof route!=="undefined"&&route==="planner"&&window.Regions&&Regions.plannerBlocks)Regions.plannerBlocks();}catch(e){}
+  });
+}catch(e){}
 function updateMiniScore(){
   const sc=dailyScore(new Date());
   const ms=$("#miniScore");if(!ms)return;
@@ -1190,11 +1206,15 @@ const dColor=dom=>DOMAIN_COLORS[dom]||DOMAIN_COLORS.General;
 function plannerBlocks(date){
   return S.timelineBlocks.filter(b=>b.date===date).sort((a,b)=>a.start-b.start);
 }
+/* Mobile timeline: single stacked track (planned full-width, actual strip below).
+   Dual-track side-by-side only works on wide screens. */
+const isMobileTl=()=>{try{return window.matchMedia&&matchMedia("(max-width:640px)").matches;}catch(e){return false;}};
 function blockHTML(b,i){
   const[bg,bd]=dColor(b.domain);
   const hasA=b.actualStart!=null&&b.actualEnd!=null;
   const sv=hasA?b.actualStart-b.start:0;
-  return `<div class="tl-block ${b.done?"done":""}" data-bl="${b.id}" role="listitem" style="left:64px;right:44%;top:${b.start/60*HOUR_H}px;height:${Math.max(34,b.dur/60*HOUR_H-6)}px;background:${bg};border-color:${bd}66;border-left:3px solid ${bd};--d:${(i||0)*70}ms" aria-label="${esc(b.title)}, planned ${minFmt(b.start)} for ${b.dur} minutes${hasA?`, actual ${minFmt(b.actualStart)} to ${minFmt(b.actualEnd)}`:""}">
+  const mob=isMobileTl();
+  return `<div class="tl-block ${b.done?"done":""}" data-bl="${b.id}" role="listitem" style="left:${mob?"48px":"64px"};right:${mob?"10px":"44%"};top:${b.start/60*HOUR_H}px;height:${Math.max(34,b.dur/60*HOUR_H-6)}px;background:${bg};border-color:${bd}66;border-left:3px solid ${bd};--d:${(i||0)*70}ms" aria-label="${esc(b.title)}, planned ${minFmt(b.start)} for ${b.dur} minutes${hasA?`, actual ${minFmt(b.actualStart)} to ${minFmt(b.actualEnd)}`:""}">
     <div style="display:flex;justify-content:space-between;gap:.4rem;align-items:center"><span class="tt">${esc(b.title)}</span>
     <span style="flex-shrink:0"><button class="icon-btn good" data-action="bl-done" data-id="${b.id}" title="Toggle done" style="font-size:.75rem" aria-label="Toggle block done">${b.done?"✓":"○"}</button><button class="icon-btn" data-action="bl-del" data-id="${b.id}" title="Delete" style="font-size:.75rem" aria-label="Delete block">✕</button></span></div>
     <div class="tm mono">${minFmt(b.start)} – ${minFmt(b.start+b.dur)} · ${b.dur}m${hasA?` · <b style="color:var(--text)">${sv>0?"+":""}${sv}m start</b>`:""}</div></div>`;
@@ -1202,7 +1222,17 @@ function blockHTML(b,i){
 function actualBarHTML(b,i){
   if(b.actualStart==null||b.actualEnd==null)return "";
   const[bg,bd]=dColor(b.domain);
-  return `<div class="tl-actual" data-bl="${b.id}" aria-hidden="true" style="left:58%;right:10px;top:${b.actualStart/60*HOUR_H}px;height:${Math.max(36,(b.actualEnd-b.actualStart)/60*HOUR_H-4)}px;background:${bg};border-color:${bd}99;--d:${(i||0)*70+120}ms">
+  const mob=isMobileTl();
+  let top,left,right,height;
+  if(mob){
+    /* stacked below its planned block */
+    const planTop=b.start/60*HOUR_H,planH=Math.max(34,b.dur/60*HOUR_H-6);
+    top=planTop+planH+6;left="48px";right="10px";height=30;
+  }else{
+    top=b.actualStart/60*HOUR_H;left="58%";right="10px";
+    height=Math.max(36,(b.actualEnd-b.actualStart)/60*HOUR_H-4);
+  }
+  return `<div class="tl-actual" data-bl="${b.id}" aria-hidden="true" style="left:${left};right:${right};top:${top}px;height:${height}px;background:${bg};border-color:${bd}99;--d:${(i||0)*70+120}ms">
     <span class="tt">✓ ${esc(b.title)}</span>
     <span class="tm mono">${minFmt(b.actualStart)}–${minFmt(b.actualEnd)}</span></div>`;
 }
