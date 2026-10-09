@@ -291,9 +291,14 @@ canvas.chart{width:100%;height:170px;display:block}
 .plan-col-head h3{font-size:1.05rem}
 .timeline{position:relative;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden;max-height:660px;overflow-y:auto}
 .tl-hour{height:44px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);position:relative;font-size:.68rem;color:var(--faint);padding:4px 8px}
-.tl-now{position:absolute;left:0;right:0;height:2px;background:var(--bad);z-index:5;box-shadow:0 0 8px var(--bad);pointer-events:none}
-.tl-now i{position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--bad);box-shadow:0 0 10px var(--bad)}
-.tl-block{position:absolute;left:64px;right:10px;border-radius:10px;padding:.4rem .6rem;font-size:.8rem;cursor:grab;z-index:4;border:1px solid;overflow:hidden;user-select:none;touch-action:none;will-change:transform}
+.tl-hour.off{opacity:.4}
+.tl-now{position:absolute;left:0;right:0;height:2px;z-index:5;pointer-events:none;
+  background:linear-gradient(90deg,transparent 2%,var(--accent2),var(--accent) 98%)}
+.tl-now-t{position:absolute;right:12px;top:-9px;font-size:.62rem;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:99px;padding:.1rem .5rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.tl-block{position:absolute;left:64px;right:10px;border-radius:10px;padding:.4rem .6rem;font-size:.8rem;cursor:grab;z-index:4;border:1px solid;overflow:hidden;user-select:none;touch-action:none;will-change:transform;
+  box-shadow:0 4px 14px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.09)}
 .tl-block.done{opacity:.55}
 .tl-block.done .tt{text-decoration:line-through}
 .tl-block .tt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1194,14 +1199,16 @@ function blockHTML(b){
 function actualBarHTML(b){
   if(b.actualStart==null||b.actualEnd==null)return "";
   const[bg,bd]=dColor(b.domain);
-  return `<div class="tl-actual" data-bl="${b.id}" aria-hidden="true" style="left:58%;right:10px;top:${b.actualStart/60*HOUR_H}px;height:${Math.max(10,(b.actualEnd-b.actualStart)/60*HOUR_H-4)}px;background:${bg};border-color:${bd}"><span class="mono">${minFmt(b.actualStart)}–${minFmt(b.actualEnd)}</span></div>`;
+  return `<div class="tl-actual" data-bl="${b.id}" aria-hidden="true" style="left:58%;right:10px;top:${b.actualStart/60*HOUR_H}px;height:${Math.max(36,(b.actualEnd-b.actualStart)/60*HOUR_H-4)}px;background:${bg};border-color:${bd}99">
+    <span class="tt">✓ ${esc(b.title)}</span>
+    <span class="tm mono">${minFmt(b.actualStart)}–${minFmt(b.actualEnd)}</span></div>`;
 }
 function tlConnectorsHTML(blocks){
-  const lines=blocks.filter(b=>b.actualStart!=null&&b.actualEnd!=null).map(b=>{
+  const paths=blocks.filter(b=>b.actualStart!=null&&b.actualEnd!=null).map(b=>{
     const y1=b.start+b.dur/2,y2=b.actualStart+(b.actualEnd-b.actualStart)/2;
-    return `<line x1="54" y1="${y1}" x2="58" y2="${y2}" vector-effect="non-scaling-stroke"/>`;
+    return `<path d="M54 ${y1} C55.5 ${y1} 56.5 ${y2} 58 ${y2}" vector-effect="non-scaling-stroke"/>`;
   }).join("");
-  return `<svg class="tl-connect" viewBox="0 0 100 1440" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>`;
+  return `<svg class="tl-connect" viewBox="0 0 100 1440" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>`;
 }
 function execChecklistHTML(bl){
   return bl.map(execRowHTML).join("")||emptyHTML("◷","No blocks planned yet.");
@@ -1659,7 +1666,7 @@ function plannerAgendaHTML(anchor){
 function viewPlanner(){
   const t=dayKey(),blocks=S.blocksDate||t;
   const nowMin=new Date().getHours()*60+new Date().getMinutes();
-  let hours="";for(let h=0;h<24;h++)hours+=`<div class="tl-hour"><span>${String(h).padStart(2,"0")}:00</span></div>`;
+  let hours="";for(let h=0;h<24;h++)hours+=`<div class="tl-hour${h<8||h>=18?" off":""}"><span>${String(h).padStart(2,"0")}:00</span></div>`;
   const modeSeg=`<div class="seg" role="group" aria-label="Planner view">${["day","week","agenda"].map(m=>`<button data-action="pl-mode" data-v="${m}" class="${plannerMode===m?"sel":""}" aria-pressed="${plannerMode===m}">${m[0].toUpperCase()+m.slice(1)}</button>`).join("")}</div>`;
   const zoomSeg=`<div class="seg" role="group" aria-label="Timeline zoom">${Object.keys(ZOOMS).map(z=>`<button data-action="pl-zoom" data-v="${z}" class="${plannerZoom===z?"sel":""}" aria-pressed="${plannerZoom===z}" title="Timeline zoom">${z[0].toUpperCase()}</button>`).join("")}</div>`;
   let main="";
@@ -1671,7 +1678,7 @@ function viewPlanner(){
       <div class="plan-col-head"><h3 class="font-display">◷ Plan vs Actual</h3><span class="sub" id="tlCount"></span></div>
       <div class="timeline" id="tl" role="list" aria-label="24 hour timeline, planned track left, actual track right">${hours}
         <div class="tl-workhours" style="top:${9*HOUR_H}px;height:${8*HOUR_H}px" aria-hidden="true"></div>
-        ${blocks===t?`<div class="tl-now" style="top:${nowMin/60*HOUR_H}px" aria-hidden="true"><i></i></div>`:""}
+        ${blocks===t?`<div class="tl-now" style="top:${nowMin/60*HOUR_H}px" aria-hidden="true"><span class="tl-now-t mono">${minFmt(nowMin)}</span></div>`:""}
         ${tlConnectorsHTML(bl)}
         <div id="tlBlocks">${bl.map(blockHTML).join("")}${bl.map(actualBarHTML).join("")}</div>
       </div>
@@ -4819,9 +4826,13 @@ h3{font-size:1.02rem;line-height:1.4}
 .skip-link:focus{left:0}
 /* planner v2 */
 .tl-workhours{position:absolute;left:64px;right:10px;background:color-mix(in srgb,var(--accent) 6%,transparent);border-left:2px solid color-mix(in srgb,var(--accent) 30%,transparent);pointer-events:none;z-index:1}
-.tl-actual{position:absolute;border-radius:8px;padding:.15rem .5rem;font-size:.72rem;z-index:3;border:1px dashed;overflow:hidden;opacity:.92;pointer-events:none}
+.tl-actual{position:absolute;border-radius:8px;padding:.3rem .55rem;font-size:.72rem;z-index:3;
+  border:1px solid;overflow:hidden;pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 3px 10px rgba(0,0,0,.28)}
+.tl-actual .tt{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-actual .tm{font-size:.66rem;opacity:.82}
 .tl-connect{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
-.tl-connect line{stroke:var(--accent);stroke-width:1.5;opacity:.55}
+.tl-connect path{stroke:var(--accent2);stroke-width:1.5;fill:none;opacity:.32}
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.5rem}
 .week-col{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.6rem .5rem;cursor:pointer;font:inherit;color:var(--text);text-align:center;display:flex;flex-direction:column;gap:.3rem;transition:border-color var(--motion-fast) var(--ease-standard),transform var(--motion-fast) var(--ease-standard)}
 .week-col:hover{border-color:var(--accent);transform:translateY(-2px)}
