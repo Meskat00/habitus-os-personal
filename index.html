@@ -375,9 +375,13 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .cmdk-item small{color:var(--faint);margin-left:auto;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase}
 .cmdk-item.sel{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 24%,transparent),color-mix(in srgb,var(--accent2) 12%,transparent));border-color:color-mix(in srgb,var(--accent) 42%,transparent)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-body.density-compact .card{padding:.85rem}
+body.density-compact .card{padding:.85rem;border-radius:14px}
 body.density-compact .row-item{padding:.6rem .8rem}
 body.density-compact .stat .v{font-size:1.15rem}
+body.density-compact .view{padding:.8rem}
+body.density-compact .view-head{margin-bottom:.7rem}
+body.density-compact .grid{gap:.6rem}
+body.density-compact h2.font-display{font-size:1.45rem}
 @media(max-width:920px){
   .sidebar{position:fixed;z-index:60;transform:translateX(-105%);transition:transform .24s}
   body.menu-open .sidebar{transform:none}
@@ -556,7 +560,7 @@ function seedState(){
     roles:["Physics researcher"], focusAreas:["DFT / CASTEP","Quantum Computing","GRE Physics"],
     preferredStudy:"Evening", deepWorkTarget:90, studyTarget:120, waterTarget:8,
     scoreWeights:{execution:30,focus:30,learning:20,wellbeing:20},
-    theme:{preset:"cockpit",accent:"#8b5cf6",bgfx:"aurora",radius:16,fontScale:100,density:"comfortable",nav:"full"},
+    theme:{preset:"cockpit",accent:"#8b5cf6",bgfx:"aurora",radius:16,fontScale:100,density:"auto",nav:"full"},
     clock:defaultClockPrefs(),
     habits:[
       {id:uid(),name:"Deep work session",icon:"🧠",history:mkHist(i=>i!==2&&i!==5)},
@@ -761,6 +765,16 @@ const fmtP=s=>{s=Math.max(0,Math.round(s));return s>=3600?`${Math.floor(s/3600)}
    LAYER 2 — Theme engine
 ================================================================ */
 const ACCENTS=["#8b5cf6","#22d3ee","#34d399","#fbbf24","#fb7185","#f472b6"];
+/* Density resolution: "auto" picks compact on phones / narrow screens. */
+function resolvedDensity(){
+  const d=(S.theme&&S.theme.density)||"comfortable";
+  if(d!=="auto")return d;
+  try{
+    if(window.matchMedia&&matchMedia("(max-width:720px)").matches)return "compact";
+    if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent||""))return "compact";
+  }catch(e){}
+  return "comfortable";
+}
 function applyTheme(){
   const t=S.theme;
   document.documentElement.dataset.theme=t.preset;
@@ -769,7 +783,7 @@ function applyTheme(){
   r.setProperty("--accent",t.accent);
   r.setProperty("--radius",t.radius+"px");
   r.setProperty("--font-scale",(t.fontScale/100).toFixed(2));
-  document.body.classList.toggle("density-compact",t.density==="compact");
+  document.body.classList.toggle("density-compact",resolvedDensity()==="compact");
   document.body.classList.toggle("nav-icons",t.nav==="icons");
   $("#identityMini").textContent=S.identity||"";
   syncCollapseIcon();updateMiniScore();
@@ -780,6 +794,12 @@ function applyMotion(){
   const mq=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.documentElement.dataset.motionEffective=(m==="none"||m==="reduced"||mq)?"reduced":"full";
 }
+/* Re-resolve Auto density when the viewport crosses the phone breakpoint
+   (e.g. rotating the phone, resizing a desktop window). */
+try{
+  const __dmq=window.matchMedia&&window.matchMedia("(max-width:720px)");
+  if(__dmq&&__dmq.addEventListener)__dmq.addEventListener("change",()=>{try{applyTheme();}catch(e){}});
+}catch(e){}
 function updateMiniScore(){
   const sc=dailyScore(new Date());
   const ms=$("#miniScore");if(!ms)return;
@@ -1802,7 +1822,8 @@ function viewSettings(){
     <div class="card"><h3>Typography & layout</h3>
       <label class="f" for="setRadius">Corner roundness</label><div class="slider-row"><input type="range" id="setRadius" data-set="radius" min="6" max="26" value="${t.radius}"/><output id="radiusOut" class="mono">${t.radius}px</output></div>
       <label class="f" for="setFont">Text size</label><div class="slider-row"><input type="range" id="setFont" data-set="fontScale" min="88" max="118" value="${t.fontScale}"/><output id="fontOut" class="mono">${t.fontScale}%</output></div>
-      <label class="f">Density</label>${seg("set-density",[["comfortable","Comfortable"],["compact","Compact"]],t.density)}
+      <label class="f">Density</label>${seg("set-density",[["comfortable","Comfortable"],["compact","Compact"],["auto","Auto"]],t.density)}
+      <p class="hint" style="margin-top:.3rem">Auto uses the compact layout on phones and narrow screens.</p>
       <div style="margin-top:.8rem"><label class="f">Sidebar</label>${seg("set-nav",[["full","Full"],["icons","Icons only"]],t.nav)}</div>
       <div style="margin-top:.8rem"><label class="f">Motion</label>${seg("set-motion",[["full","Full"],["reduced","Reduced"],["none","None"]],S.motion||"full")}
       <p class="hint" style="margin-top:.35rem">Reduced respects your system's reduced-motion preference too.</p></div>
