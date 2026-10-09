@@ -580,7 +580,7 @@ const parseD=iso=>{const[a,b,c]=String(iso).split("-").map(Number);return new Da
 const fmtD=iso=>{if(!iso)return "—";return parseD(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"});};
 const fmtDT=iso=>{if(!iso)return "—";return parseD(iso).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});};
 const mondayOf=(d=new Date())=>{const x=new Date(d);const dow=(x.getDay()+6)%7;x.setDate(x.getDate()-dow);return dayKey(x);};
-const minFmt=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+const minFmt=m=>{let h=Math.floor(m/60)%24;const ap=h>=12?"PM":"AM";h=h%12||12;return h+":"+String(m%60).padStart(2,"0")+" "+ap;};
 const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 
 /* ================================================================
@@ -1544,7 +1544,7 @@ function viewToday(){
   <div class="grid g3" style="margin-bottom:1rem">
     <div class="card" style="grid-column:span 2"><div class="plan-col-head"><h3>Plan vs Actual · today</h3><button class="btn btn-ghost btn-xs" data-route="planner">Full planner →</button></div>
       <div id="todayPA">${todayPlanActualHTML()}</div></div>
-    <div class="card"><div class="plan-col-head"><h3>Capacity</h3><span class="sub">9:00–17:00</span></div><div id="todayCap">${capacityHTML()}</div></div>
+    <div class="card"><div class="plan-col-head"><h3>Capacity</h3><span class="sub">9 AM–5 PM</span></div><div id="todayCap">${capacityHTML()}</div></div>
   </div>
   <div class="grid g3" style="margin-bottom:1rem">
     <div class="card"><div class="plan-col-head"><h3>At risk</h3></div><div id="todayRisk">${atRiskHTML()}</div></div>
@@ -1699,7 +1699,7 @@ function plannerAgendaHTML(anchor){
 function viewPlanner(){
   const t=dayKey(),blocks=S.blocksDate||t;
   const nowMin=new Date().getHours()*60+new Date().getMinutes();
-  let hours="";for(let h=0;h<24;h++)hours+=`<div class="tl-hour${h<8||h>=18?" off":""}"><span>${String(h).padStart(2,"0")}:00</span></div>`;
+  let hours="";for(let h=0;h<24;h++)hours+=`<div class="tl-hour${h<8||h>=18?" off":""}"><span>${h%12||12} ${h>=12?"PM":"AM"}</span></div>`;
   const modeSeg=`<div class="seg" role="group" aria-label="Planner view">${["day","week","agenda"].map(m=>`<button data-action="pl-mode" data-v="${m}" class="${plannerMode===m?"sel":""}" aria-pressed="${plannerMode===m}">${m[0].toUpperCase()+m.slice(1)}</button>`).join("")}</div>`;
   const zoomSeg=`<div class="seg" role="group" aria-label="Timeline zoom">${Object.keys(ZOOMS).map(z=>`<button data-action="pl-zoom" data-v="${z}" class="${plannerZoom===z?"sel":""}" aria-pressed="${plannerZoom===z}" title="Timeline zoom">${z[0].toUpperCase()}</button>`).join("")}</div>`;
   let main="";
@@ -2927,8 +2927,8 @@ const Onboarding={
    LAYER 15 — Boot
 ================================================================ */
 function tick(){
-  const n=new Date();
-  $("#clock").textContent=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");
+  const n=new Date();let h=n.getHours();const ap=h>=12?"PM":"AM";h=h%12||12;
+  $("#clock").textContent=h+":"+String(n.getMinutes()).padStart(2,"0")+" "+ap;
   $("#dateLine").textContent=n.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
 }
 $("#menuFab").addEventListener("click",()=>document.body.classList.toggle("menu-open"));
