@@ -8132,7 +8132,7 @@ function makeApi(auth, db, user){
   const uid=user.uid;
   const P=(coll,id)=>"users/"+uid+"/"+coll+(id?"/"+id:"");
   return {
-    uid, serverTimestamp,
+    uid, serverTimestamp, serverTs: serverTimestamp,
     async batchSet(items){
       for(let i=0;i<items.length;i+=400){
         const b=writeBatch(db);
