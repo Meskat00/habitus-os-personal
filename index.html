@@ -2845,10 +2845,21 @@ const Onboarding={
 /* ================================================================
    LAYER 15 — Boot
 ================================================================ */
+let _lastDayKey=dayKey();
 function tick(){
   const n=new Date();let h=n.getHours();const ap=h>=12?"PM":"AM";h=h%12||12;
   $("#clock").textContent=h+":"+String(n.getMinutes()).padStart(2,"0")+" "+ap;
   $("#dateLine").textContent=n.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  // Day rollover: refresh the workspace when midnight passes while the app is open
+  const dk=dayKey(n);
+  if(dk!==_lastDayKey){
+    _lastDayKey=dk;
+    try{
+      // Active timers keep running; just re-render the current view with the new day's data
+      render();
+      toast("🌅 New day — workspace refreshed");
+    }catch(e){}
+  }
 }
 $("#menuFab").addEventListener("click",()=>document.body.classList.toggle("menu-open"));
 $("#scrim").addEventListener("click",()=>document.body.classList.remove("menu-open"));
@@ -5678,6 +5689,13 @@ document.addEventListener("visibilitychange",()=>{
     const str=inst.getString(Date.now());
     inst.clock.build(str);inst._lastStr=str;
   }}catch(e){}
+  /* day may have changed while the app was in the background — refresh if so */
+  try{
+    const dk=dayKey();
+    if(typeof _lastDayKey!=="undefined"&&dk!==_lastDayKey){
+      _lastDayKey=dk;render();toast("🌅 New day — workspace refreshed");
+    }
+  }catch(e){}
 });
 
 /* ---------- fullscreen experience ---------- */
