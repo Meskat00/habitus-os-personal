@@ -397,13 +397,30 @@ body.density-compact h2.font-display{font-size:1.45rem}
   radial-gradient(1100px 600px at 20% 10%,rgba(124,58,237,.16),transparent 60%),
   radial-gradient(900px 500px at 85% 90%,rgba(34,211,238,.10),transparent 60%),#070914}
 .auth-wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:1rem}
-.auth-card{background:#0d1024;border:1px solid #232a4d;border-radius:18px;padding:2.2rem;
-  max-width:380px;width:100%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.5)}
-.auth-card h1{font-size:1.6rem;margin:.8rem 0 .3rem}
-.auth-card .brand-mark{margin:0 auto}
-.auth-btn{width:100%;margin-top:.6rem;min-height:48px}
-.auth-err{color:#f87171;font-size:.85rem;margin-top:.8rem}
-.auth-note{color:var(--faint);font-size:.75rem;margin-top:1.2rem}
+.auth-card{background:linear-gradient(180deg,#10142c,#0c0f22);border:1px solid #26305a;border-radius:22px;
+  padding:2.4rem 2.2rem 2rem;max-width:400px;width:100%;text-align:center;
+  box-shadow:0 32px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);
+  animation:popIn .38s cubic-bezier(.2,.9,.3,1.15)}
+.auth-brand{margin-bottom:.4rem}
+.brand-mark-lg{width:60px;height:60px;font-size:1.75rem;border-radius:18px;margin:0 auto;
+  box-shadow:0 10px 28px rgba(124,58,237,.4),inset 0 1px 0 rgba(255,255,255,.28)}
+.auth-eyebrow{font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--accent2);
+  font-weight:700;margin:1rem 0 .35rem}
+.auth-card h1{font-size:1.9rem;margin:0 0 .35rem;letter-spacing:-.02em}
+.auth-card .auth-tag{color:var(--muted);font-size:.92rem;margin:0 0 .2rem}
+.auth-div{display:flex;align-items:center;gap:.75rem;margin:1.35rem 0 1.1rem;
+  color:var(--faint);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.auth-div::before,.auth-div::after{content:"";flex:1;height:1px;background:var(--border)}
+.auth-btn{width:100%;min-height:50px;font-size:.95rem}
+.auth-btn + .auth-btn,.auth-div + .auth-btn{margin-top:.15rem}
+.auth-google{display:flex;align-items:center;justify-content:center;gap:.65rem}
+.g-glyph{display:inline-grid;place-items:center;width:22px;height:22px;flex-shrink:0;
+  border-radius:50%;background:#fff;color:#202124;font-weight:700;font-size:.9rem;font-family:Arial,sans-serif}
+#emailForm{text-align:left;margin-top:1rem}
+.auth-err{color:#f87171;font-size:.85rem;margin-top:.9rem;line-height:1.5}
+.auth-note{display:flex;align-items:center;justify-content:center;gap:.45rem;color:var(--faint);
+  font-size:.74rem;margin:1.6rem 0 0;line-height:1.5}
+.auth-note svg{flex-shrink:0;opacity:.7}
 /* ---------- cloud ---------- */
 .sync-pill{white-space:nowrap}
 #peerBanner{position:fixed;top:0;left:0;right:0;z-index:180;display:flex;gap:.8rem;align-items:center;
@@ -444,12 +461,17 @@ body.density-compact h2.font-display{font-size:1.45rem}
 <div id="authShell" hidden>
   <div class="auth-wrap">
     <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-      <div class="brand-mark font-display" aria-hidden="true">H</div>
-      <h1 id="authTitle" class="font-display">Habitus OS</h1>
-      <p class="sub">Personal Physics, Research and Quantum Computing Workspace</p>
+      <div class="auth-brand">
+        <div class="brand-mark brand-mark-lg font-display" aria-hidden="true">H</div>
+        <div class="auth-eyebrow">Personal research OS</div>
+        <h1 id="authTitle" class="font-display">Habitus OS</h1>
+        <p class="auth-tag">Physics · Research · Quantum Computing</p>
+      </div>
       <div id="authLoading"><p class="sub" style="margin:1.2rem 0">Starting…</p></div>
       <div id="authForms" hidden>
-        <button class="btn btn-primary auth-btn" id="googleSignIn" type="button">Continue with Google</button>
+        <div class="auth-div" aria-hidden="true"><span>Sign in to continue</span></div>
+        <button class="btn btn-primary auth-btn auth-google" id="googleSignIn" type="button"><span class="g-glyph" aria-hidden="true">G</span>Continue with Google</button>
+        <div class="auth-div" aria-hidden="true"><span>or</span></div>
         <button class="btn auth-btn" id="emailToggle" type="button">Sign in with Email</button>
         <form id="emailForm" hidden>
           <label class="f" for="authEmail">Email</label>
@@ -460,7 +482,7 @@ body.density-compact h2.font-display{font-size:1.45rem}
         </form>
         <p class="auth-err" id="authErr" role="alert" hidden></p>
       </div>
-      <p class="auth-note">Private personal workspace</p>
+      <p class="auth-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Private single-owner workspace · syncs only to your devices</p>
     </div>
   </div>
 </div>
