@@ -1,7 +1,7 @@
 /* Habitus OS service worker — app-shell caching only.
    Never caches: Firebase Auth, Firestore, personal records, tokens, backups. */
 "use strict";
-const CACHE_VERSION = "habitus-os-v5-1-release-1";
+const CACHE_VERSION = "habitus-os-v5-1-release-2"; /* bumped: Firebase config wired */
 const APP_SHELL = [
   "./",
   "./index.html",
