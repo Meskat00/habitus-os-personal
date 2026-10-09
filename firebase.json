@@ -1,0 +1,1 @@
+{"firestore":{"indexes":"firestore.indexes.json","rules":"firestore.rules"},"hosting":{"cleanUrls":false,"ignore":["firebase.json",".firebaserc","firestore.rules","firestore.indexes.json",".github/**","README.md","SECURITY.md","PRIVACY.md","robots.txt"],"public":".","trailingSlash":false}}
