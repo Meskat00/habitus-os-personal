@@ -296,9 +296,12 @@ canvas.chart{width:100%;height:170px;display:block}
   background:linear-gradient(90deg,transparent 2%,var(--accent2),var(--accent) 98%)}
 .tl-now-t{position:absolute;right:12px;top:-9px;font-size:.62rem;font-weight:700;color:#fff;
   background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:99px;padding:.1rem .5rem;
-  box-shadow:0 2px 8px rgba(0,0,0,.4)}
+  box-shadow:0 2px 8px rgba(0,0,0,.4);animation:nowPulse 2.6s ease-in-out infinite}
+@keyframes nowPulse{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 2px 16px rgba(139,92,246,.6)}}
 .tl-block{position:absolute;left:64px;right:10px;border-radius:10px;padding:.4rem .6rem;font-size:.8rem;cursor:grab;z-index:4;border:1px solid;overflow:hidden;user-select:none;touch-action:none;will-change:transform;
-  box-shadow:0 4px 14px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.09)}
+  box-shadow:0 4px 14px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.09);
+  animation:tlIn .45s cubic-bezier(.2,.9,.3,1.12) backwards;animation-delay:var(--d,0ms)}
+@keyframes tlIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 .tl-block.done{opacity:.55}
 .tl-block.done .tt{text-decoration:line-through}
 .tl-block .tt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1187,19 +1190,19 @@ const dColor=dom=>DOMAIN_COLORS[dom]||DOMAIN_COLORS.General;
 function plannerBlocks(date){
   return S.timelineBlocks.filter(b=>b.date===date).sort((a,b)=>a.start-b.start);
 }
-function blockHTML(b){
+function blockHTML(b,i){
   const[bg,bd]=dColor(b.domain);
   const hasA=b.actualStart!=null&&b.actualEnd!=null;
   const sv=hasA?b.actualStart-b.start:0;
-  return `<div class="tl-block ${b.done?"done":""}" data-bl="${b.id}" role="listitem" style="left:64px;right:44%;top:${b.start/60*HOUR_H}px;height:${Math.max(34,b.dur/60*HOUR_H-6)}px;background:${bg};border-color:${bd}66;border-left:3px solid ${bd}" aria-label="${esc(b.title)}, planned ${minFmt(b.start)} for ${b.dur} minutes${hasA?`, actual ${minFmt(b.actualStart)} to ${minFmt(b.actualEnd)}`:""}">
+  return `<div class="tl-block ${b.done?"done":""}" data-bl="${b.id}" role="listitem" style="left:64px;right:44%;top:${b.start/60*HOUR_H}px;height:${Math.max(34,b.dur/60*HOUR_H-6)}px;background:${bg};border-color:${bd}66;border-left:3px solid ${bd};--d:${(i||0)*70}ms" aria-label="${esc(b.title)}, planned ${minFmt(b.start)} for ${b.dur} minutes${hasA?`, actual ${minFmt(b.actualStart)} to ${minFmt(b.actualEnd)}`:""}">
     <div style="display:flex;justify-content:space-between;gap:.4rem;align-items:center"><span class="tt">${esc(b.title)}</span>
     <span style="flex-shrink:0"><button class="icon-btn good" data-action="bl-done" data-id="${b.id}" title="Toggle done" style="font-size:.75rem" aria-label="Toggle block done">${b.done?"✓":"○"}</button><button class="icon-btn" data-action="bl-del" data-id="${b.id}" title="Delete" style="font-size:.75rem" aria-label="Delete block">✕</button></span></div>
     <div class="tm mono">${minFmt(b.start)} – ${minFmt(b.start+b.dur)} · ${b.dur}m${hasA?` · <b style="color:var(--text)">${sv>0?"+":""}${sv}m start</b>`:""}</div></div>`;
 }
-function actualBarHTML(b){
+function actualBarHTML(b,i){
   if(b.actualStart==null||b.actualEnd==null)return "";
   const[bg,bd]=dColor(b.domain);
-  return `<div class="tl-actual" data-bl="${b.id}" aria-hidden="true" style="left:58%;right:10px;top:${b.actualStart/60*HOUR_H}px;height:${Math.max(36,(b.actualEnd-b.actualStart)/60*HOUR_H-4)}px;background:${bg};border-color:${bd}99">
+  return `<div class="tl-actual" data-bl="${b.id}" aria-hidden="true" style="left:58%;right:10px;top:${b.actualStart/60*HOUR_H}px;height:${Math.max(36,(b.actualEnd-b.actualStart)/60*HOUR_H-4)}px;background:${bg};border-color:${bd}99;--d:${(i||0)*70+120}ms">
     <span class="tt">✓ ${esc(b.title)}</span>
     <span class="tm mono">${minFmt(b.actualStart)}–${minFmt(b.actualEnd)}</span></div>`;
 }
@@ -1225,7 +1228,7 @@ const Regions={
   projects(){setHTML("#projGrid",S.projects.map(projectCardHTML).join("")||`<div class="card">${emptyHTML("⚛","No projects yet.")}</div>`);},
   goals(){setHTML("#goalGrid",S.goals.map(goalCardHTML).join("")||`<div class="card">${emptyHTML("🎯","No goals yet.")}</div>`);},
   books(){setHTML("#bookGrid",bookListHTML());},
-  plannerBlocks(){setHTML("#tlBlocks",plannerBlocks(S.blocksDate||dayKey()).map(blockHTML).join(""));},
+  plannerBlocks(){setHTML("#tlBlocks",plannerBlocks(S.blocksDate||dayKey()).map((b,i)=>blockHTML(b,i)).join(""));},
   exec(){setHTML("#execCol",execColHTML());},
   sessions(){const t=dayKey();setHTML("#sessList",S.focusSessions.filter(s=>s.date===t).map(sessRowHTML).join("")||emptyHTML("◉","No sessions yet today."));},
   dashScore(){setHTML("#dashScore",dashScoreHTML());},
@@ -1680,7 +1683,7 @@ function viewPlanner(){
         <div class="tl-workhours" style="top:${9*HOUR_H}px;height:${8*HOUR_H}px" aria-hidden="true"></div>
         ${blocks===t?`<div class="tl-now" style="top:${nowMin/60*HOUR_H}px" aria-hidden="true"><span class="tl-now-t mono">${minFmt(nowMin)}</span></div>`:""}
         ${tlConnectorsHTML(bl)}
-        <div id="tlBlocks">${bl.map(blockHTML).join("")}${bl.map(actualBarHTML).join("")}</div>
+        <div id="tlBlocks">${bl.map((b,i)=>blockHTML(b,i)).join("")}${bl.map((b,i)=>actualBarHTML(b,i)).join("")}</div>
       </div>
       <p class="sub" style="margin-top:.7rem;color:var(--faint);font-size:.78rem">Left track: planned · right track: actual · drag any planned block vertically to move it in 15-minute steps.</p>
     </div>`;
@@ -1701,6 +1704,10 @@ function viewPlanner(){
     <div id="execCol" style="display:flex;flex-direction:column;gap:1rem">${execColHTML()}</div>
   </div>`);
   const n=plannerBlocks(blocks).length;const c=$("#tlCount");if(c)c.textContent=n+" blocks · drag to reschedule";
+  /* Senior touch: auto-scroll the day timeline to the relevant window (2h before now, clamped to morning). */
+  if(plannerMode==="day"){const tl=document.getElementById("tl");
+    if(tl){const nh=new Date().getHours();const target=Math.min(Math.max(nh-2,6),15);
+      requestAnimationFrame(()=>{tl.scrollTop=target*HOUR_H;});}}
 }
 
 /* ---------- tasks / habits / research / notes ---------- */
@@ -4828,7 +4835,8 @@ h3{font-size:1.02rem;line-height:1.4}
 .tl-workhours{position:absolute;left:64px;right:10px;background:color-mix(in srgb,var(--accent) 6%,transparent);border-left:2px solid color-mix(in srgb,var(--accent) 30%,transparent);pointer-events:none;z-index:1}
 .tl-actual{position:absolute;border-radius:8px;padding:.3rem .55rem;font-size:.72rem;z-index:3;
   border:1px solid;overflow:hidden;pointer-events:none;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 3px 10px rgba(0,0,0,.28)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 3px 10px rgba(0,0,0,.28);
+  animation:tlIn .45s cubic-bezier(.2,.9,.3,1.12) backwards;animation-delay:var(--d,0ms)}
 .tl-actual .tt{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-actual .tm{font-size:.66rem;opacity:.82}
 .tl-connect{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
