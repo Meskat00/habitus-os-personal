@@ -14,7 +14,7 @@ service cloud.firestore {
       allow read, create, update, delete:
         if request.auth != null
         && request.auth.uid == userId
-        && request.auth.uid == "REPLACE_WITH_OWNER_UID";
+        && request.auth.uid == "94xUTfcWtSQhfojVtYoEQrf4w0A2";
     }
 
     // Everything else: deny.
