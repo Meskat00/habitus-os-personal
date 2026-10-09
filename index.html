@@ -5898,7 +5898,7 @@ function fcSwSaveAs(type){
       }
       /* canonical record is the block's actuals alone — no session copy, so nothing double-counts */
     });
-    Regions.blocks();updateMiniScore();
+    Regions.plannerBlocks();updateMiniScore();
     toast("Recorded as actual work 📅");
   }else{
     const types={focus:"Stopwatch",calc:"Calculation",practice:"Practice"};
