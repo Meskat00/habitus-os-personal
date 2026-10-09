@@ -8263,6 +8263,8 @@ const PWA={
       if(reg.waiting)this.onUpdateReady(reg.waiting);
       setInterval(()=>{reg.update().catch(()=>{});},6*3600*1000);
     }).catch(()=>{const sw=document.getElementById("swStatus");if(sw)sw.textContent="unavailable";});
+    setTimeout(()=>{const sw=document.getElementById("swStatus");if(sw&&sw.textContent==="--"){sw.textContent="unavailable";
+      const ps=document.getElementById("pwaStatus");if(ps&&ps.textContent==="Checking…")ps.textContent="Browser mode";}},8000);
     let refreshing=false;
     navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!refreshing){refreshing=true;location.reload();}});
   },
