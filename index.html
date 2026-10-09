@@ -290,6 +290,39 @@ canvas.chart{width:100%;height:170px;display:block}
 .plan-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:1rem;align-items:start}
 @media(max-width:1000px){.plan-grid{grid-template-columns:1fr}}
 .plan-col-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.85rem}
+/* ---------- intention planning (weekly / monthly) ---------- */
+.intention-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:860px){.intention-grid{grid-template-columns:1fr}}
+.intention-card{position:relative;overflow:hidden}
+.intention-card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2,transparent));opacity:.7}
+.intention-head{margin-bottom:.9rem}
+.mit-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.4rem}
+.mit-row{display:flex;align-items:center;gap:.6rem}
+.mit-check{flex:0 0 auto;width:1.7rem;height:1.7rem;border-radius:50%;border:1.5px solid var(--border);
+  background:transparent;color:var(--accent);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-size:.9rem}
+.mit-check:hover{border-color:var(--accent);transform:scale(1.08)}
+.mit-row.done .mit-check{background:var(--accent);border-color:var(--accent);color:#fff}
+.mit-row.done .mit-input{text-decoration:line-through;opacity:.55}
+.mit-input{flex:1}
+.intention-field{margin-top:.7rem}
+.intention-field label{display:block;margin-bottom:.35rem}
+.theme-input{font-size:1.15rem;font-weight:700;letter-spacing:.02em;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 12%,transparent),transparent)}
+.ifthen-block{margin-top:.4rem}
+.ifthen-row{display:flex;align-items:center;gap:.45rem;margin-bottom:.45rem}
+.ifthen-if,.ifthen-then{font-size:.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.ifthen-row .input{flex:1;min-width:0;padding:.55rem .7rem;font-size:.85rem}
+.month-progress{margin-top:.9rem}
+.mp-bar{height:.45rem;border-radius:99px;background:var(--surface2);overflow:hidden;margin-bottom:.3rem}
+.mp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2,#22d3ee));transition:width .5s}
+.psych-tip-card{margin-bottom:1rem;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,transparent),transparent 60%)}
+.psych-tip-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.psych-tip-title{font-size:1.25rem;line-height:1.4}
+@media(max-width:640px){.intention-grid{gap:.8rem}.psych-tip-title{font-size:1.1rem}
+  .ifthen-row{flex-wrap:wrap}.ifthen-row .input{flex:1 1 40%}}
 .plan-col-head h3{font-size:1.05rem}
 .timeline{position:relative;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden;max-height:660px;overflow-y:auto}
 .tl-hour{height:44px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);position:relative;font-size:.68rem;color:var(--faint);padding:4px 8px}
@@ -613,7 +646,9 @@ function seedState(){
     habits:[], tasks:[], projects:[], notes:[], focusSessions:[], timelineBlocks:[],
     journalEntries:[], weeklyReviews:[], goals:[], books:[], topics:[], problems:[],
     calcRuns:[], papers:[], manuscripts:[], resources:[], studioItems:[],
-        water:{}, blocksDate:null, trash:[], showScore:true
+        water:{}, blocksDate:null, trash:[], showScore:true,
+    weeklyPlan:{weekKey:"",mits:[{text:"",done:false},{text:"",done:false},{text:"",done:false}],intention:"",ifThens:[]},
+    monthlyPlan:{monthKey:"",theme:"",goals:[{text:"",done:false},{text:"",done:false},{text:"",done:false}]}
   };
 }
 /* Best-effort migration from legacy keys */
@@ -1423,6 +1458,22 @@ const PHYS_QUOTES=[
  ["If a man never contradicts himself, the reason must be that he virtually never says anything at all.","Erwin Schrödinger"],
 ];
 function physQuoteIdx(){return Math.floor(Date.now()/60000)%PHYS_QUOTES.length;}
+/* Evidence-based planning psychology: one tip per day, deterministic by date. */
+const PSYCH_TIPS=[
+ ["Eat the frog first.","Do your hardest, most important task before anything else. Morning willpower is finite — spend it on what matters most. — Brian Tracy"],
+ ["If-then planning.","Don't just set a goal — set a trigger: “If it is 9 AM, then I will open my research notes.” Implementation intentions double follow-through. — Peter Gollwitzer"],
+ ["The 2-minute rule.","If a task takes less than two minutes, do it now. Small completions build momentum and clear mental clutter. — David Allen, GTD"],
+ ["Time-block your day.","Assign every important task a specific block on your calendar. What gets scheduled gets done. — Cal Newport, Deep Work"],
+ ["Weekly review.","Spend 20 minutes each week reviewing what worked, what didn't, and what's next. Reflection compounds like interest. — GTD"],
+ ["Temptation bundling.","Pair something you must do with something you enjoy — e.g., listen to music only while exercising. — Katherine Milkman"],
+ ["Parkinson's Law.","Work expands to fill the time available. Give important tasks tight, realistic deadlines. — Cyril Parkinson"],
+ ["The Zeigarnik effect.","Your mind fixates on unfinished tasks. Write them down to free working memory — then close the loop. — Bluma Zeigarnik"],
+ ["One MIT per day.","Choose a single Most Important Task each morning. If that's all you finish, the day is still a win. — Ivy Lee method"],
+ ["Batch shallow work.","Group emails, admin, and messages into 1–2 batches. Context-switching can cost 20+ minutes per switch. — Cal Newport"],
+ ["Progress principle.","Small daily wins are the biggest motivator. Track progress visibly — momentum beats motivation. — Teresa Amabile"],
+ ["Pre-commit.","Decide tonight what tomorrow's first task will be. Morning-you will thank evening-you. — Behavioral design"],
+];
+function psychTipIdx(){const d=new Date();return (d.getFullYear()*372+d.getMonth()*31+d.getDate())%PSYCH_TIPS.length;}
 function physQuoteHTML(){
   const i=physQuoteIdx(),Q=PHYS_QUOTES[i];
   return `<div class="card quote-card" id="physQuote" data-qidx="${i}">
@@ -1615,6 +1666,99 @@ function plannerAgendaHTML(anchor){
       ${b.done?`<span class="pill low">${esc(b.execState||"done")}</span>`:`<span class="pill neutral">planned</span>`}</div>`;}).join("")}</div>`;
   }).join("")||emptyHTML("📋","Nothing planned in the next 7 days.")}</div>`;
 }
+/* ---------- Weekly / Monthly intention planning ---------- */
+function weekKeyOf(d){return mondayOf(d);}
+function monthKeyOf(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function ensurePlanRollover(){
+  const wk=weekKeyOf(new Date()),mk=monthKeyOf(new Date());
+  let changed=false;
+  if(S.weeklyPlan.weekKey!==wk){
+    S.weeklyPlan={weekKey:wk,mits:[{text:"",done:false},{text:"",done:false},{text:"",done:false}],intention:"",ifThens:[]};
+    changed=true;
+  }
+  if(S.monthlyPlan.monthKey!==mk){
+    S.monthlyPlan={monthKey:mk,theme:"",goals:[{text:"",done:false},{text:"",done:false},{text:"",done:false}]};
+    changed=true;
+  }
+  if(changed)Persist.soon();
+}
+function weekRangeLabel(){
+  const m=mondayOf(new Date());
+  const s=new Date(m);s.setDate(s.getDate()+6);
+  const f=d=>d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  return f(new Date(m))+" – "+f(s);
+}
+function monthLabel(){
+  return new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"});
+}
+function intentionCardsHTML(){
+  ensurePlanRollover();
+  const wp=S.weeklyPlan,mp=S.monthlyPlan;
+  const tipI=psychTipIdx(),tip=PSYCH_TIPS[tipI];
+  const mitDone=wp.mits.filter(m=>m.done&&m.text).length;
+  const goalDone=mp.goals.filter(g=>g.done&&g.text).length;
+  return `
+  <div class="intention-grid">
+    <div class="card intention-card">
+      <div class="intention-head">
+        <div><div class="eyebrow accent">✦ This week</div>
+        <h3 class="font-display" style="margin:.2rem 0">Weekly MITs</h3>
+        <div class="sub">${weekRangeLabel()} · ${mitDone}/3 complete</div></div>
+      </div>
+      <div class="mit-list">
+        ${wp.mits.map((m,i)=>`
+        <div class="mit-row ${m.done?"done":""}">
+          <button class="mit-check" data-action="mit-toggle" data-v="${i}" aria-label="Toggle MIT ${i+1}">${m.done?"✓":""}</button>
+          <input class="input mit-input" data-mit="${i}" value="${esc(m.text)}" placeholder="Most important task ${i+1}…" aria-label="Weekly MIT ${i+1}">
+        </div>`).join("")}
+      </div>
+      <div class="intention-field">
+        <label class="sub" for="wpIntention">🎯 Weekly intention <span class="faint">— one sentence, present tense</span></label>
+        <input class="input" id="wpIntention" data-wp="intention" value="${esc(wp.intention)}" placeholder="e.g. I make steady progress on my thesis every morning…">
+      </div>
+      <div class="ifthen-block">
+        <div class="sub" style="margin:.6rem 0 .4rem">⚡ If-then plans <span class="faint">— triggers that double follow-through</span></div>
+        ${wp.ifThens.map((p,i)=>`
+        <div class="ifthen-row">
+          <span class="ifthen-if">If</span>
+          <input class="input" data-ifthen="${i}:iff" value="${esc(p.iff)}" placeholder="it's 9 AM…" aria-label="If condition ${i+1}">
+          <span class="ifthen-then">then</span>
+          <input class="input" data-ifthen="${i}:then" value="${esc(p.then)}" placeholder="I open my research notes" aria-label="Then action ${i+1}">
+          <button class="btn btn-ghost btn-xs" data-action="ifthen-del" data-v="${i}" aria-label="Remove plan">✕</button>
+        </div>`).join("")}
+        <button class="btn btn-ghost btn-sm" data-action="ifthen-add">＋ Add if-then plan</button>
+      </div>
+    </div>
+    <div class="card intention-card">
+      <div class="intention-head">
+        <div><div class="eyebrow accent">◈ This month</div>
+        <h3 class="font-display" style="margin:.2rem 0">${esc(monthLabel())}</h3>
+        <div class="sub">${goalDone}/3 outcomes complete</div></div>
+      </div>
+      <div class="intention-field">
+        <label class="sub" for="mpTheme">🌙 Monthly theme <span class="faint">— one word that guides everything</span></label>
+        <input class="input theme-input" id="mpTheme" data-mp="theme" value="${esc(mp.theme)}" placeholder="e.g. Deep Focus">
+      </div>
+      <div class="sub" style="margin:.6rem 0 .4rem">🎯 3 monthly outcomes</div>
+      <div class="mit-list">
+        ${mp.goals.map((g,i)=>`
+        <div class="mit-row ${g.done?"done":""}">
+          <button class="mit-check" data-action="mgoal-toggle" data-v="${i}" aria-label="Toggle goal ${i+1}">${g.done?"✓":""}</button>
+          <input class="input mit-input" data-mgoal="${i}" value="${esc(g.text)}" placeholder="Monthly outcome ${i+1}…" aria-label="Monthly goal ${i+1}">
+        </div>`).join("")}
+      </div>
+      <div class="month-progress">
+        <div class="mp-bar"><i style="width:${Math.round(new Date().getDate()/new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate()*100)}%"></i></div>
+        <div class="sub faint">Month elapsed</div>
+      </div>
+    </div>
+  </div>
+  <div class="card psych-tip-card">
+    <div class="psych-tip-head"><span class="eyebrow accent">🧠 Psychology tip</span><span class="sub faint">changes daily</span></div>
+    <div class="psych-tip-title font-display">“${esc(tip[0])}”</div>
+    <p class="sub" style="margin:.4rem 0 0">${esc(tip[1])}</p>
+  </div>`;
+}
 function viewPlanner(){
   const t=dayKey(),blocks=S.blocksDate||t;
   const nowMin=new Date().getHours()*60+new Date().getMinutes();
@@ -1648,7 +1792,8 @@ function viewPlanner(){
      <button class="btn btn-sm" data-action="plan-from-tasks" title="Create blocks from open tasks">⤵ Plan from tasks</button>
      <button class="btn btn-sm" data-action="move-unfinished" title="Move unfinished blocks to tomorrow">→ Move unfinished</button>
      <button class="btn btn-primary btn-sm" data-action="add-block">＋ Add block</button>`)}
-  <div class="plan-grid">
+  ${intentionCardsHTML()}
+  <div class="plan-grid" style="margin-top:1rem">
     <div>${main}</div>
     <div id="execCol" style="display:flex;flex-direction:column;gap:1rem">${execColHTML()}</div>
   </div>`);
@@ -2238,6 +2383,11 @@ const Actions={
     Regions.tasks();Regions.dashStats();Regions.dashScore();updateMiniScore();toastUndo("Task moved to Trash");},
   "toggle-task":(el,ds)=>{const x=byId(S.tasks,ds.id);if(!x)return;commit("toggle-task",()=>{x.done=!x.done;x.doneDate=x.done?dayKey():"";});Regions.tasks();Regions.dashStats();Regions.dashScore();updateMiniScore();toast(x.done?"Task completed ✓":"Task reopened");},
   "task-filter":(el,ds)=>{taskFilter=ds.v;segSelect(el);Regions.tasks();},
+  /* weekly / monthly intention planning */
+  "mit-toggle":(el,ds)=>{const i=+ds.v;commit("wp-mit-toggle",()=>{S.weeklyPlan.mits[i].done=!S.weeklyPlan.mits[i].done;});render();},
+  "mgoal-toggle":(el,ds)=>{const i=+ds.v;commit("mp-goal-toggle",()=>{S.monthlyPlan.goals[i].done=!S.monthlyPlan.goals[i].done;});render();},
+  "ifthen-add":()=>{commit("wp-ifthen-add",()=>{S.weeklyPlan.ifThens.push({iff:"",then:""});});render();},
+  "ifthen-del":(el,ds)=>{const i=+ds.v;commit("wp-ifthen-del",()=>{S.weeklyPlan.ifThens.splice(i,1);});render();},
   /* habits */
   "add-habit":()=>habitModal(),
   "edit-habit":(el,ds)=>{const h=byId(S.habits,ds.id);if(h)habitModal(h);},
@@ -2544,6 +2694,17 @@ document.addEventListener("input",e=>{
     commit("qset-"+k,()=>{S.quantum[k]=t.type==="checkbox"?t.checked:(t.type==="range"?+t.value:t.value);});
     const o=document.getElementById("qs_"+k+"Out");if(o)o.textContent=t.value;return;}
   if(t.dataset&&t.dataset.set)applySetting(t.dataset.set,t);
+  /* weekly / monthly intention planning */
+  if(t.dataset&&t.dataset.mit!==undefined){const i=+t.dataset.mit;
+    commit("wp-mit",()=>{S.weeklyPlan.mits[i].text=t.value;});return;}
+  if(t.dataset&&t.dataset.wp==="intention"){
+    commit("wp-intention",()=>{S.weeklyPlan.intention=t.value;});return;}
+  if(t.dataset&&t.dataset.ifthen){const [i,f]=t.dataset.ifthen.split(":");
+    commit("wp-ifthen",()=>{S.weeklyPlan.ifThens[+i][f]=t.value;});return;}
+  if(t.dataset&&t.dataset.mp==="theme"){
+    commit("mp-theme",()=>{S.monthlyPlan.theme=t.value;});return;}
+  if(t.dataset&&t.dataset.mgoal!==undefined){const i=+t.dataset.mgoal;
+    commit("mp-goal",()=>{S.monthlyPlan.goals[i].text=t.value;});return;}
 });
 document.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){
@@ -2879,7 +3040,7 @@ const ENTITY_KINDS=["habits","tasks","projects","notes","focusSessions","timelin
   "breaks","presentations","quantumPaths","quantumTopics","quantumSkills","quantumExercises","quantumProjects","quantumExperiments","quantumReviews","trash"];
 function idbReq(rq){return new Promise((res,rej)=>{rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error||new Error("indexeddb"));});}
 const DB_KINDS=ENTITY_KINDS.filter(k=>k!=="trash");
-const PREF_KEYS=["theme","scoreWeights","identity","roles","focusAreas","preferredStudy","deepWorkTarget","studyTarget","waterTarget","showScore","onboarded","water","blocksDate","trash","retention","lastExternalBackup","lastVerified","motion","navOpen","clock","quantum","schemaVersion"];
+const PREF_KEYS=["theme","scoreWeights","identity","roles","focusAreas","preferredStudy","deepWorkTarget","studyTarget","waterTarget","showScore","onboarded","water","blocksDate","trash","retention","lastExternalBackup","lastVerified","motion","navOpen","clock","quantum","schemaVersion","weeklyPlan","monthlyPlan"];
 const DB={
   db:null,available:false,NAME:"habitus-os",VER:3, /* v3: quantum + breaks + presentations stores */
   kstore:k=>"k_"+k,
@@ -3068,6 +3229,22 @@ function normalizeState(st){
   if(st.scoreWeights.journal!=null)delete st.scoreWeights.journal;
   for(const k of["execution","focus","learning","wellbeing"])if(typeof st.scoreWeights[k]!=="number")st.scoreWeights[k]=d.scoreWeights[k];
   if(!st.water||typeof st.water!=="object")st.water={};
+  if(!st.weeklyPlan||typeof st.weeklyPlan!=="object")st.weeklyPlan={};
+  const wp=st.weeklyPlan;
+  if(typeof wp.weekKey!=="string")wp.weekKey="";
+  if(!Array.isArray(wp.mits))wp.mits=[];
+  wp.mits=wp.mits.map(m=>typeof m==="string"?{text:m,done:false}:(m&&typeof m==="object"?{text:m.text||"",done:!!m.done}:{text:"",done:false}));
+  while(wp.mits.length<3)wp.mits.push({text:"",done:false});
+  if(typeof wp.intention!=="string")wp.intention="";
+  if(!Array.isArray(wp.ifThens))wp.ifThens=[];
+  wp.ifThens=wp.ifThens.map(x=>({iff:x.iff||x.if||"",then:x.then||""})).filter(x=>x.iff||x.then);
+  if(!st.monthlyPlan||typeof st.monthlyPlan!=="object")st.monthlyPlan={};
+  const mp=st.monthlyPlan;
+  if(typeof mp.monthKey!=="string")mp.monthKey="";
+  if(typeof mp.theme!=="string")mp.theme="";
+  if(!Array.isArray(mp.goals))mp.goals=[];
+  mp.goals=mp.goals.map(g=>typeof g==="string"?{text:g,done:false}:(g&&typeof g==="object"?{text:g.text||"",done:!!g.done}:{text:"",done:false}));
+  while(mp.goals.length<3)mp.goals.push({text:"",done:false});
   if(!Array.isArray(st.roles))st.roles=[];
   if(!Array.isArray(st.focusAreas))st.focusAreas=[];
   if(typeof st.showScore!=="boolean")st.showScore=true;
@@ -7458,7 +7635,8 @@ const Cloud={
     quantumExperiments:"quantumExperiments",quantumReviews:"quantumReviews"},
   LONGFORM:["notes","journalEntries","papers","manuscripts","quantumExperiments","problems","studioItems","resources"],
   PREF_SYNC:["theme","motion","clock","quantum","scoreWeights","identity","roles","focusAreas",
-    "preferredStudy","deepWorkTarget","studyTarget","waterTarget","showScore","retention","onboarded"],
+    "preferredStudy","deepWorkTarget","studyTarget","waterTarget","showScore","retention","onboarded",
+    "weeklyPlan","monthlyPlan"],
   SYNC_EXCLUDE:["_rev","_uAt","_cAt","_dev","_del","_schema","_owner","_noSync","createdAt","updatedAt"],
 
   get api(){return window.__fbApi||null;},
