@@ -1,0 +1,74 @@
+name: Deploy Habitus OS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required files
+        run: |
+          test -f index.html
+          test -f manifest.webmanifest
+          test -f sw.js
+          test -f offline.html
+          test -f .nojekyll
+          test -f robots.txt
+
+      - name: Scan for forbidden private files
+        run: |
+          if find . -type f \( \
+            -name "*.backup.json" -o \
+            -name "*.private.json" -o \
+            -name "*.export.json" -o \
+            -name ".env" -o \
+            -name "serviceAccount*.json" \
+          \) | grep -q .; then
+            echo "Forbidden private file detected."
+            exit 1
+          fi
+
+      - name: Verify no Firebase Admin credentials
+        run: |
+          if grep -rIl "private_key" --include="*.html" --include="*.js" --include="*.json" . | grep -v node_modules | grep -q .; then
+            echo "Possible private key material detected."
+            exit 1
+          fi
+
+  deploy:
+    needs: validate
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
