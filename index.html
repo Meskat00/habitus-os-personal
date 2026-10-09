@@ -2353,7 +2353,7 @@ const Actions={
   "data-export":()=>exportModal(),
   "data-import":()=>$("#importFile").click(),
   "data-reset":()=>{if(!confirm("Reset ALL data to the starter workspace? A pre-reset snapshot is saved first."))return;
-    Snapshots.take("pre-reset").then(()=>{
+    Snapshots.take("pre-reset").catch(()=>null).then(()=>{
       commit("reset",()=>{const th=S.theme;const fresh=seedState();for(const k of Object.keys(S))delete S[k];Object.assign(S,fresh);S.theme=th;S.onboarded=true;});
       applyTheme();render();toast("Workspace reset — snapshot kept");});},
   "theme-reset":()=>{commit("theme-reset",()=>{const a=S.theme.accent;S.theme=Object.assign(seedState().theme,{accent:a});});applyTheme();render();toast("Theme reset");},
