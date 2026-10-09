@@ -235,6 +235,8 @@ html[data-theme="zen"] .card{box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
 .icon-btn:hover{color:var(--bad);background:var(--surface2)}
 .icon-btn.good:hover{color:var(--good)}
 .input,select.input,textarea.input{font:inherit;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.74rem .95rem;font-size:.93rem;width:100%;outline:none;transition:border-color .15s,box-shadow .15s,background-color .3s}
+select.input option{background-color:#141a30;color:#e6e9f5}
+select.input optgroup{background-color:#141a30;color:#aab3d0}
 .input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 textarea.input{resize:vertical;min-height:88px;line-height:1.55}
 label.f{display:block;font-size:.74rem;font-weight:700;color:var(--muted);margin:1.05rem 0 .42rem;letter-spacing:.08em;text-transform:uppercase}
@@ -600,8 +602,6 @@ function defaultClockPrefs(){return{
   customCard:"#161c2b",customDigit:"#eef2ff",customBg:"#0a0d16",customAccent:"#8b5cf6"
 };}
 function seedState(){
-  const t=dayKey();
-  const qmT=uid(),dftT=uid(),greT=uid(),p0=uid(),p1=uid(),p2=uid();
   return {
     v:2, schemaVersion:"5.1", onboarded:false,
     identity:"I am a disciplined researcher",
@@ -610,91 +610,10 @@ function seedState(){
     scoreWeights:{execution:30,focus:30,learning:20,wellbeing:20},
     theme:{preset:"cockpit",accent:"#8b5cf6",bgfx:"aurora",radius:16,fontScale:100,density:"auto",nav:"full"},
     clock:defaultClockPrefs(),
-    habits:[
-      {id:uid(),name:"Deep work session",icon:"🧠",history:mkHist(i=>i!==2&&i!==5)},
-      {id:uid(),name:"Read a paper",icon:"📄",history:mkHist(i=>i%3!==1)},
-      {id:uid(),name:"DFT / CASTEP progress",icon:"⚛️",history:mkHist(i=>i!==2&&i!==5)},
-      {id:uid(),name:"Review concept notes",icon:"📝",history:mkHist(i=>i%3!==1)},
-      {id:uid(),name:"Exercise",icon:"🏃",history:mkHist(i=>i%2===0)}
-    ],
-    tasks:[
-      {id:uid(),title:"Run CASTEP convergence test (cutoff energy)",priority:"high",top:true,mustWin:true,due:t,done:false,doneDate:"",createdAt:t,projectId:null,goalId:null,blockId:null,energy:"high",actualMin:null,tags:[],status:"open"},
-      {id:uid(),title:"Finish Shankar Ch. 4 problems",priority:"high",top:false,mustWin:true,due:t,done:false,doneDate:"",createdAt:t,projectId:null,goalId:null,blockId:null,energy:"med",actualMin:null,tags:[],status:"open"},
-      {id:uid(),title:"Read: Density Functional Theory — A Practical Introduction, Ch. 2",priority:"med",top:false,mustWin:false,due:dayKey(addDays(new Date(),1)),done:false,doneDate:"",createdAt:t,projectId:null,goalId:null,blockId:null,energy:"med",actualMin:null,tags:[],status:"open"},
-      {id:uid(),title:"Draft .cell and .param for MoS₂ monolayer",priority:"med",top:false,mustWin:false,due:dayKey(addDays(new Date(),2)),done:false,doneDate:"",createdAt:t,projectId:null,goalId:null,blockId:null,energy:"med",actualMin:null,tags:[],status:"open"},
-      {id:uid(),title:"GRE Physics: 20 mechanics problems",priority:"low",top:false,mustWin:false,due:"",done:false,doneDate:"",createdAt:t,projectId:null,goalId:null,blockId:null,energy:"low",actualMin:null,tags:[],status:"open"}
-    ],
-    projects:[
-      {id:p0,title:"DFT/CASTEP research",desc:"Core QM foundations for research and GRE. First CASTEP convergence study of MoS₂.",progress:45,status:"Active",tags:["DFT","CASTEP","MoS₂"],next:"k-point + cutoff convergence, band structure baseline",goalId:null,milestones:[{id:uid(),title:"Cutoff convergence done",due:"",done:true,evidence:""},{id:uid(),title:"k-point convergence",due:"",done:false,evidence:""}]},
-      {id:p1,title:"MoS₂ monolayer band structure",desc:"2H monolayer: relax geometry, compute band structure plot, check SOC pseudopotential need.",progress:30,status:"Active",tags:["CASTEP","2D materials"],next:"Build input files",goalId:null,milestones:[]},
-      {id:p2,title:"GRE Physics preparation",desc:"Finish Shankar Ch. 1–8 with problems. REA problem sets weekly.",progress:50,status:"Active",tags:["GRE"],next:"Ch. 4–6 problems done",goalId:null,milestones:[]}
-    ],
-    notes:[
-      {id:uid(),title:"Why Solids Have Bands",body:"Periodic potential → Bloch's theorem → allowed energy bands separated by gaps. Nearly-free electron model shows gaps opening at Brillouin zone boundaries.",tags:["Solid State","Theory"],updated:t},
-      {id:uid(),title:"Bloch's theorem",body:"In a periodic potential V(r+R) = V(r), eigenstates can be written ψ_k(r) = e^{ik·r} u_k(r) with u_k periodic. k lives in the first Brillouin zone.",tags:["QM","Solid State"],updated:dayKey(addDays(new Date(),-1))},
-      {id:uid(),title:"Kohn–Sham equations",body:"Map the interacting many-body problem onto non-interacting electrons in an effective potential. Solve self-consistently until the density converges.",tags:["DFT","Theory"],updated:dayKey(addDays(new Date(),-2))}
-    ],
-    focusSessions:[
-      {id:uid(),date:t,type:"Deep Work",subject:"DFT / CASTEP",minutes:90,distractions:2,quality:4,taskId:null,projectId:null,blockId:null,outcome:"",difficulty:null,energy:null,note:"",startedAt:null,endedAt:null},
-      {id:uid(),date:t,type:"Study",subject:"GRE Physics",minutes:45,distractions:1,quality:5,taskId:null,projectId:null,blockId:null,outcome:"",difficulty:null,energy:null,note:"",startedAt:null,endedAt:null},
-      {id:uid(),date:dayKey(addDays(new Date(),-1)),type:"Deep Work",subject:"DFT / CASTEP",minutes:75,distractions:3,quality:4,taskId:null,projectId:null,blockId:null,outcome:"",difficulty:null,energy:null,note:"",startedAt:null,endedAt:null}
-    ],
-    timelineBlocks:[
-      {id:uid(),date:t,title:"Morning deep work — CASTEP",start:9*60,dur:90,done:true,domain:"DFT / CASTEP",taskId:null,projectId:null,intention:"",buffer:false,status:"done",actualStart:9*60,actualEnd:10*60+35,varianceReason:"",outcome:"",sessionIds:[]},
-      {id:uid(),date:t,title:"Shankar problems",start:14*60,dur:60,done:false,domain:"GRE Physics",taskId:null,projectId:null,intention:"",buffer:false,status:"planned",actualStart:null,actualEnd:null,varianceReason:"",outcome:"",sessionIds:[]},
-      {id:uid(),date:t,title:"Paper reading",start:19*60,dur:45,done:false,domain:"Reading",taskId:null,projectId:null,intention:"",buffer:false,status:"planned",actualStart:null,actualEnd:null,varianceReason:"",outcome:"",sessionIds:[]}
-    ],
-    journalEntries:[
-      {id:uid(),date:dayKey(addDays(new Date(),-1)),mood:4,accomplished:"Converged cutoff energy to 1 meV/atom.",well:"Protected morning deep work block.",lessons:"Batch admin tasks — they fragment afternoons."}
-    ],
-    weeklyReviews:[],
-    goals:[
-      {id:uid(),title:"Finish Shankar Ch. 1–8 with problems",targetDate:dayKey(addDays(new Date(),45)),nextAction:"Ch. 4–6 problems done",progress:35,done:false,motivation:"",metric:"",baseline:"",target:"",status:"active"},
-      {id:uid(),title:"First CASTEP convergence study of MoS₂",targetDate:dayKey(addDays(new Date(),30)),nextAction:"k-point convergence",progress:45,done:false,motivation:"",metric:"",baseline:"",target:"",status:"active"},
-      {id:uid(),title:"Ship 4 Manim explainer videos",targetDate:dayKey(addDays(new Date(),60)),nextAction:"Script video 1",progress:25,done:false,motivation:"",metric:"",baseline:"",target:"",status:"active"}
-    ],
-    books:[
-      {id:uid(),title:"Principles of Quantum Mechanics",author:"R. Shankar",status:"reading",progress:55},
-      {id:uid(),title:"Introduction to Solid State Physics",author:"C. Kittel",status:"reading",progress:30},
-      {id:uid(),title:"Electronic Structure",author:"R. M. Martin",status:"queued",progress:0},
-      {id:uid(),title:"Density Functional Theory: A Practical Introduction",author:"Sholl & Steckel",status:"queued",progress:0},
-      {id:uid(),title:"Quantum Computation and Quantum Information",author:"Nielsen & Chuang",status:"queued",progress:0},
-      {id:uid(),title:"GRE Physics (REA)",author:"REA",status:"reading",progress:40}
-    ],
-    topics:[
-      {id:qmT,name:"Quantum Mechanics",subject:"QM",parentId:null,mastery:62,confidence:4,notes:"Postulates, operators, eigenproblems.",lastReviewed:t,nextReview:t,reviewCount:3,ease:2.5,prevInterval:4},
-      {id:uid(),name:"Time-independent perturbation theory",subject:"QM",parentId:qmT,mastery:45,confidence:3,notes:"1st/2nd order energy and wavefunction corrections.",lastReviewed:null,nextReview:t,reviewCount:1,ease:2.5,prevInterval:1},
-      {id:dftT,name:"Density Functional Theory",subject:"DFT",parentId:null,mastery:55,confidence:3,notes:"HK theorems → KS equations → XC ladder.",lastReviewed:t,nextReview:t,reviewCount:2,ease:2.5,prevInterval:3},
-      {id:uid(),name:"Kohn–Sham equations",subject:"DFT",parentId:dftT,mastery:58,confidence:3,notes:"Self-consistent density cycle.",lastReviewed:null,nextReview:t,reviewCount:0,ease:2.5,prevInterval:0},
-      {id:greT,name:"GRE Physics",subject:"GRE",parentId:null,mastery:40,confidence:3,notes:"",lastReviewed:null,nextReview:t,reviewCount:0,ease:2.5,prevInterval:0},
-      {id:uid(),name:"Mechanics",subject:"GRE",parentId:greT,mastery:48,confidence:3,notes:"Lagrangian, rotations, oscillations.",lastReviewed:null,nextReview:t,reviewCount:1,ease:2.5,prevInterval:1}
-    ],
-    problems:[
-      {id:uid(),topicId:null,subject:"GRE Physics",source:"REA test 2, Q8",statement:"Particle in a 1D box of length L — find allowed energies.",attempt:"Used wrong boundary condition at the walls.",errorCat:"concept gap",lesson:"Nodes at walls → k = nπ/L.",status:"open",difficulty:3,date:t,lastReviewed:null,nextReview:t,reviewCount:0,ease:2.5,prevInterval:0},
-      {id:uid(),topicId:null,subject:"DFT",source:"CASTEP run #14",statement:"SCF cycle oscillating, not converging.",attempt:"Raised the cutoff energy only.",errorCat:"strategy",lesson:"Try density mixing / smearing before raising cutoff.",status:"open",difficulty:4,date:t,lastReviewed:null,nextReview:t,reviewCount:0,ease:2.5,prevInterval:0}
-    ],
-    calcRuns:[
-      {id:uid(),projectId:p0,code:"CASTEP",version:"24.1",structure:"MoS₂ monolayer 2H",method:"PBE",cutoff:400,kgrid:"6×6×1",convCrit:"ΔE < 1 meV/atom",status:"converged",energy:-1234.56,outputPath:"",result:"baseline",notes:"",date:t},
-      {id:uid(),projectId:p0,code:"CASTEP",version:"24.1",structure:"MoS₂ monolayer 2H",method:"PBE",cutoff:500,kgrid:"6×6×1",convCrit:"ΔE < 1 meV/atom",status:"converged",energy:-1234.81,outputPath:"",result:"ΔE = 0.25 eV vs 400",notes:"",date:t},
-      {id:uid(),projectId:p0,code:"CASTEP",version:"24.1",structure:"MoS₂ monolayer 2H",method:"PBE",cutoff:400,kgrid:"12×12×1",convCrit:"ΔE < 1 meV/atom",status:"converged",energy:-1234.79,outputPath:"",result:"k-grid effect small",notes:"",date:t},
-      {id:uid(),projectId:p0,code:"CASTEP",version:"24.1",structure:"MoS₂ monolayer 2H",method:"PBE",cutoff:500,kgrid:"12×12×1",convCrit:"ΔE < 1 meV/atom",status:"running",energy:null,outputPath:"",result:"",notes:"",date:t}
-    ],
-    papers:[
-      {id:uid(),title:"Density functional theory: a practical introduction",authors:"Sholl & Steckel",year:2009,venue:"Wiley",url:"",status:"reading",rating:4,relevance:5,keyFindings:"KS mapping, XC ladder, practical recipes",projectId:p0,notes:""},
-      {id:uid(),title:"High-throughput screening of 2D materials",authors:"A. Researcher et al.",year:2024,venue:"Phys. Rev. B",url:"",status:"to-read",rating:0,relevance:4,keyFindings:"",projectId:p0,notes:"Cite in methods section"}
-    ],
-    manuscripts:[
-      {id:uid(),title:"Convergence study of monolayer MoS₂",projectId:p0,stage:"outline",target:"Phys. Rev. B",notes:"Sections: intro, methods, results",updated:t}
-    ],
-    resources:[
-      {id:uid(),title:"MIT 8.04 Quantum Physics I — lectures",url:"",kind:"watching",topicId:null,status:"to-do",rating:0,notes:""},
-      {id:uid(),title:"DFT in a nutshell — reading list",url:"",kind:"reading",topicId:null,status:"doing",rating:4,notes:"Ch. 2–3 most useful"}
-    ],
-    studioItems:[
-      {id:uid(),title:"Why solids have bands — Manim #1",kind:"video",stage:"script",goalId:null,notes:"Hook: nearly-free electron model",updated:t},
-      {id:uid(),title:"Bloch theorem visual explainer",kind:"video",stage:"idea",goalId:null,notes:"",updated:t}
-    ],
-    water:{}, blocksDate:null, trash:[], showScore:true
+    habits:[], tasks:[], projects:[], notes:[], focusSessions:[], timelineBlocks:[],
+    journalEntries:[], weeklyReviews:[], goals:[], books:[], topics:[], problems:[],
+    calcRuns:[], papers:[], manuscripts:[], resources:[], studioItems:[],
+        water:{}, blocksDate:null, trash:[], showScore:true
   };
 }
 /* Best-effort migration from legacy keys */
